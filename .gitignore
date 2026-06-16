@@ -28,9 +28,6 @@ db.sqlite3
 .DS_Store
 Thumbs.db
 
-# Rapports / fichiers temporaires
+# Rapports /
 check_*.txt
 *.log
-
-# Migrations (optionnel - si tu veux regenerer)
-# */migrations/*.py
