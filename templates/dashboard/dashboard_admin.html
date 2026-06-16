@@ -1,0 +1,235 @@
+{% extends "base.html" %}
+{% block title %}Tableau de bord Administrateur{% endblock %}
+{% block content %}
+<div class="page-header">
+  <div>
+    <h1>Bonjour, {{ user.first_name|default:user.username }}</h1>
+    <div class="subtitle">Pilotage de la plateforme COFINANCE CI — {% now "l d F Y" %}</div>
+  </div>
+  <div class="flex gap-8">
+    <a href="{% url 'admin_credits' %}" class="btn btn-secondary">Gérer les crédits</a>
+    <a href="{% url 'admin_users' %}" class="btn btn-secondary">Utilisateurs</a>
+    <a href="{% url 'admin:index' %}" class="btn btn-ghost">⚙ Admin</a>
+  </div>
+</div>
+
+<!-- KPIs principaux -->
+<div class="stats-grid">
+  <div class="stat-card">
+    <div class="icon-bg">👥</div>
+    <div class="label">Clients</div>
+    <div class="value">{{ stats.total_clients }}</div>
+    <div class="trend up">{{ stats.total_agents }} agents</div>
+  </div>
+  <div class="stat-card">
+    <div class="icon-bg">₣</div>
+    <div class="label">Total prêté</div>
+    <div class="value">{{ stats.montant_total_prete }} F</div>
+    <div class="trend up">{{ stats.total_credits }} crédits au total</div>
+  </div>
+  <div class="stat-card">
+    <div class="icon-bg">↺</div>
+    <div class="label">Remboursé</div>
+    <div class="value">{{ stats.total_rembourse }} F</div>
+    <div class="trend up">Taux : {{ stats.taux_recouvrement }}%</div>
+  </div>
+  <div class="stat-card">
+    <div class="icon-bg">◈</div>
+    <div class="label">Assurances actives</div>
+    <div class="value">{{ stats.assurances_actives }}</div>
+    <div class="trend">{{ stats.conversations_ouvertes }} conversations</div>
+  </div>
+</div>
+
+<!-- Crédits par statut -->
+<div class="stats-grid" style="grid-template-columns:repeat(auto-fit,minmax(140px,1fr));">
+  <div class="stat-card" style="padding:16px;">
+    <div class="label">Soumis</div>
+    <div class="value" style="font-size:1.5rem;">{{ stats.credits_soumis }}</div>
+  </div>
+  <div class="stat-card" style="padding:16px;">
+    <div class="label">En analyse</div>
+    <div class="value" style="font-size:1.5rem;color:#3a5fb8;">{{ stats.en_analyse }}</div>
+  </div>
+  <div class="stat-card" style="padding:16px;">
+    <div class="label">Approuvés</div>
+    <div class="value" style="font-size:1.5rem;color:#2a8c52;">{{ stats.approuves }}</div>
+  </div>
+  <div class="stat-card" style="padding:16px;">
+    <div class="label">Rejetés</div>
+    <div class="value" style="font-size:1.5rem;color:#c64141;">{{ stats.rejetes }}</div>
+  </div>
+  <div class="stat-card" style="padding:16px;">
+    <div class="label">Décaissés</div>
+    <div class="value" style="font-size:1.5rem;">{{ stats.decaisses }}</div>
+  </div>
+  <div class="stat-card" style="padding:16px;">
+    <div class="label">Approbation</div>
+    <div class="value" style="font-size:1.5rem;">{{ stats.taux_approbation }}%</div>
+  </div>
+</div>
+
+<!-- NPS Card -->
+<div class="card mb-24" style="background:linear-gradient(135deg,var(--white),#faf8f5);">
+  <div class="flex-between" style="flex-wrap:wrap;gap:16px;">
+    <div style="flex:1;min-width:200px;">
+      <div class="card-title mb-8">Net Promoter Score</div>
+      <p class="text-muted text-sm">Satisfaction client mesurée en temps réel</p>
+      <div class="flex gap-16 mt-16" style="flex-wrap:wrap;">
+        <div class="flex gap-8" style="align-items:center;">
+          <span class="badge badge-success">{{ stats.nps_promoters|default:0 }}</span>
+          <span class="text-sm">Promoteurs</span>
+        </div>
+        <div class="flex gap-8" style="align-items:center;">
+          <span class="badge badge-warning">{{ nps_recent|length|add:stats.nps_promoters|add:stats.nps_detractors|default:0|add:"-" }}</span>
+          <span class="text-sm">Passifs</span>
+        </div>
+        <div class="flex gap-8" style="align-items:center;">
+          <span class="badge badge-danger">{{ stats.nps_detractors|default:0 }}</span>
+          <span class="text-sm">Détracteurs</span>
+        </div>
+      </div>
+      {% if nps_recent %}
+      <div class="mt-16">
+        <strong class="text-sm">Derniers avis :</strong>
+        {% for n in nps_recent %}
+        <div class="flex gap-8 mt-8" style="align-items:center;">
+          <span class="badge {% if n.score >= 9 %}badge-success{% elif n.score >= 7 %}badge-warning{% else %}badge-danger{% endif %}" style="min-width:32px;text-align:center;">{{ n.score }}</span>
+          <span class="text-sm">{{ n.user.get_full_name|default:n.user.username }}</span>
+          <span class="text-xs text-muted">{{ n.created_at|timesince }}</span>
+        </div>
+        {% endfor %}
+      </div>
+      {% endif %}
+    </div>
+    <div style="text-align:center;min-width:140px;">
+      <div class="nps-gauge">
+        <div class="nps-gauge-inner {% if stats.nps_score >= 50 %}good{% elif stats.nps_score >= 20 %}ok{% else %}bad{% endif %}">
+          {{ stats.nps_score|default:"—" }}
+        </div>
+      </div>
+      <div class="text-sm text-muted mt-8">Score NPS</div>
+      <div class="text-xs text-muted">{{ stats.nps_total|default:0 }} réponse(s)</div>
+    </div>
+  </div>
+</div>
+
+<!-- Filtres -->
+<div class="card mb-24">
+  <div class="card-header">
+    <span class="card-title">Filtres</span>
+  </div>
+  <form method="get" class="flex gap-12" style="flex-wrap:wrap;align-items:end;">
+    <div class="form-group" style="margin-bottom:0;min-width:180px;">
+      <label class="form-label">Période</label>
+      <select name="periode">
+        <option value="">Tout</option>
+        <option value="30" {% if filter_periode == '30' %}selected{% endif %}>30 derniers jours</option>
+        <option value="90" {% if filter_periode == '90' %}selected{% endif %}>3 derniers mois</option>
+        <option value="180" {% if filter_periode == '180' %}selected{% endif %}>6 derniers mois</option>
+        <option value="365" {% if filter_periode == '365' %}selected{% endif %}>Cette année</option>
+      </select>
+    </div>
+    <div class="form-group" style="margin-bottom:0;min-width:180px;">
+      <label class="form-label">Région</label>
+      <select name="region">
+        <option value="">Toutes</option>
+        {% for r in regions %}
+        <option value="{{ r }}" {% if filter_region == r %}selected{% endif %}>{{ r|default:"Non renseignée" }}</option>
+        {% endfor %}
+      </select>
+    </div>
+    <button class="btn btn-secondary" type="submit">Filtrer</button>
+    {% if filter_periode or filter_region %}
+    <a href="{% url 'dashboard' %}" class="btn btn-ghost">Réinitialiser</a>
+    {% endif %}
+  </form>
+</div>
+
+<!-- Évolution mensuelle -->
+<div class="card mb-24">
+  <div class="card-header">
+    <span class="card-title">Évolution mensuelle (6 mois)</span>
+  </div>
+  <div style="overflow-x:auto;">
+    <table class="table" style="min-width:600px;">
+      <thead>
+        <tr>
+          <th>Mois</th>
+          <th>Crédits créés</th>
+          <th>Remboursements</th>
+          <th>Souscriptions</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for m in mois_evolution %}
+        <tr>
+          <td><strong>{{ m.mois }}</strong></td>
+          <td>
+            <div class="flex gap-8" style="align-items:center;">
+              <span style="min-width:24px;font-weight:600;">{{ m.credits }}</span>
+              <div class="mini-bar"><div class="mini-bar-fill" style="width:{{ m.credits|add:'1'|divisibleby:2|yesno:'80,40' }}%;"></div></div>
+            </div>
+          </td>
+          <td>{{ m.remboursements }}</td>
+          <td>{{ m.souscriptions }}</td>
+        </tr>
+        {% empty %}
+        <tr><td colspan="4" class="text-muted" style="text-align:center;">Pas encore de données.</td></tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+
+<div class="grid-2">
+  <div class="card">
+    <div class="card-header">
+      <span class="card-title">Derniers crédits</span>
+      <a href="{% url 'admin_credits' %}" class="btn btn-sm btn-ghost">Voir tout →</a>
+    </div>
+    {% for credit in derniers_credits %}
+    <div class="list-item">
+      <div class="list-item-left">
+        <strong>{{ credit.client.get_full_name|default:credit.client.username }}</strong>
+        <div class="text-muted text-sm">{{ credit.amount }} F CFA — {{ credit.purpose|truncatechars:25 }}</div>
+      </div>
+      <div class="list-item-right">
+        <span class="badge 
+          {% if credit.status == 'DECAISSEE' %}badge-success
+          {% elif credit.status == 'APPROUVEE' %}badge-gold
+          {% elif credit.status == 'EN_ANALYSE' %}badge-info
+          {% elif credit.status == 'REJETEE' %}badge-danger
+          {% else %}badge-warning{% endif %}">
+          {{ credit.get_status_display }}
+        </span>
+      </div>
+    </div>
+    {% empty %}
+    <div class="empty-state"><p class="text-muted">Aucun crédit.</p></div>
+    {% endfor %}
+  </div>
+
+  <div class="card">
+    <div class="card-header">
+      <span class="card-title">Notifications récentes</span>
+      <a href="{% url 'notification_list' %}" class="btn btn-sm btn-ghost">Voir tout →</a>
+    </div>
+    {% for n in dernieres_notifications %}
+    <div class="list-item">
+      <div class="list-item-left">
+        <strong class="text-sm">{{ n.title|truncatechars:35 }}</strong>
+        <div class="text-muted text-xs">{{ n.user.get_full_name|default:n.user.username }}</div>
+      </div>
+      <div class="list-item-right">
+        <span class="badge {% if not n.is_read %}badge-bordeaux{% else %}badge{% endif %}" style="font-size:.65rem;">
+          {{ n.created_at|timesince }}
+        </span>
+      </div>
+    </div>
+    {% empty %}
+    <div class="empty-state"><p class="text-muted">Aucune notification.</p></div>
+    {% endfor %}
+  </div>
+</div>
+{% endblock %}

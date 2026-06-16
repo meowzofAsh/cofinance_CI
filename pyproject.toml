@@ -1,0 +1,43 @@
+[project]
+name = "cofinance-ci"
+version = "1.0.0"
+description = "Plateforme de microfinance et d'assurance mobile"
+requires-python = ">=3.12"
+dependencies = [
+    "django>=6.0,<6.1",
+    "djangorestframework>=3.17,<3.18",
+    "django-filter>=25.1",
+    "djangorestframework-simplejwt>=5.5",
+    "channels>=4.3,<4.4",
+    "channels-redis>=4.2",
+    "drf-spectacular>=0.28",
+    "psycopg2-binary>=2.9",
+    "django-cors-headers>=4.6",
+    "gunicorn>=23.0",
+]
+
+[project.optional-dependencies]
+dev = [
+    "pytest>=8.0",
+    "pytest-django>=4.9",
+    "pytest-cov>=6.0",
+    "coverage>=7.6",
+    "ruff>=0.9",
+]
+
+[tool.pytest.ini_options]
+DJANGO_SETTINGS_MODULE = "config.settings"
+python_files = ["tests.py", "test_*.py"]
+testpaths = ["tests"]
+
+[tool.ruff]
+line-length = 100
+target-version = "py314"
+
+[tool.ruff.lint]
+select = ["E", "F", "W", "I", "N", "UP"]
+ignore = ["E501"]
+
+[tool.coverage.run]
+source = ["core", "accounts", "credits", "remboursements", "assurances", "notifications", "dashboard", "support_chat", "surveys"]
+omit = ["*/migrations/*", "*/tests/*", "config/settings.py"]

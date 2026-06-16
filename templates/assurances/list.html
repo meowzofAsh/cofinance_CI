@@ -1,0 +1,89 @@
+{% extends "base.html" %}
+{% block title %}Assurances{% endblock %}
+{% block content %}
+<div class="page-header">
+  <div>
+    <h1>Assurances</h1>
+    <div class="subtitle">Protégez vos finances avec nos produits adaptés</div>
+  </div>
+</div>
+
+{% if subscriptions %}
+<section style="margin-bottom:2rem;">
+  <div class="card">
+    <div class="card-header">
+      <span class="card-title">
+        {% if user.role == "ADMIN" or user.role == "AGENT" %}
+          Souscriptions clients
+        {% else %}
+          Mes assurances
+        {% endif %}
+      </span>
+      <span class="badge badge-bordeaux">{{ subscriptions|length }} souscription(s)</span>
+    </div>
+    <div class="table-wrap">
+      <table class="table">
+        <thead>
+          <tr>
+            {% if user.role == "ADMIN" or user.role == "AGENT" %}<th>Client</th>{% endif %}
+            <th>Produit</th>
+            <th>Début</th>
+            <th>Fin</th>
+            <th>Statut</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for sub in subscriptions %}
+          <tr>
+            {% if user.role == "ADMIN" or user.role == "AGENT" %}
+            <td>{{ sub.client.get_full_name|default:sub.client.username }}</td>
+            {% endif %}
+            <td><strong>{{ sub.product.name }}</strong></td>
+            <td>{{ sub.start_date|date:"d/m/Y" }}</td>
+            <td>{{ sub.end_date|date:"d/m/Y" }}</td>
+            <td>
+              <span class="badge {% if sub.status == 'ACTIVE' %}badge-success{% else %}badge{% endif %}">
+                {{ sub.get_status_display }}
+              </span>
+
+            </td>
+          </tr>
+          {% empty %}
+          <tr><td colspan="5" class="empty-state"><p class="text-muted">Aucune souscription.</p></td></tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+</section>
+{% endif %}
+
+<h2 style="margin-bottom:1rem;">Produits disponibles</h2>
+<div class="stats-grid">
+  {% for product in products %}
+  <div class="card" style="display:flex;flex-direction:column;">
+    <div class="flex-between mb-16">
+      <h3>{{ product.name }}</h3>
+    </div>
+    <p class="text-muted" style="flex:1;">{{ product.description|truncatechars:120 }}</p>
+    <div class="mt-16 mb-16">
+      <div style="font-size:2rem;font-weight:800;color:var(--bordeaux);">
+        {{ product.price }} F
+      </div>
+      <div class="text-muted text-sm">pour {{ product.duration_days }} jours de couverture</div>
+    </div>
+    {% if user.role == "CLIENT" %}
+    <a href="{% url 'assurance_subscribe' product.pk %}" class="btn btn-primary btn-block">
+      Souscrire
+    </a>
+    {% endif %}
+  </div>
+  {% empty %}
+  <div class="card">
+    <div class="empty-state">
+      <p class="text-muted">Aucun produit disponible pour le moment.</p>
+    </div>
+  </div>
+  {% endfor %}
+</div>
+{% endblock %}

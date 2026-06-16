@@ -1,0 +1,71 @@
+{% extends "base.html" %}
+{% block title %}Inscription{% endblock %}
+{% block sidebar %}{% endblock %}
+{% block navbar %}{% endblock %}
+{% block content %}
+<div class="auth-wrap">
+  <div class="auth-card" style="max-width:520px;">
+    <div class="brand">
+      <div class="brand-logo">C</div>
+      <div class="brand-name">COFINANCE<small>CÔTE D'IVOIRE</small></div>
+    </div>
+    <div class="auth-header">
+      <h2>Créer un compte</h2>
+      <p class="muted">Rejoignez la plateforme premium de microfinance</p>
+    </div>
+
+    {% if messages %}
+      {% for message in messages %}
+        <div class="alert alert-{{ message.tags }}">{{ message }}</div>
+      {% endfor %}
+    {% endif %}
+
+    <form method="post" action="{% url 'register' %}">
+      {% csrf_token %}
+      <div class="grid-2">
+        <div class="form-group">
+          <label class="form-label">Prénom</label>
+          <input type="text" name="first_name" placeholder="Jean" required>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Nom</label>
+          <input type="text" name="last_name" placeholder="Kouassi" required>
+        </div>
+      </div>
+      <div class="form-group">
+        <label class="form-label">Email</label>
+        <input type="email" name="email" placeholder="exemple@email.com" required>
+      </div>
+      <div class="form-group">
+        <label class="form-label">Téléphone</label>
+        <input type="text" name="phone" placeholder="+225 01 02 03 04 05">
+      </div>
+      <div class="grid-2">
+        <div class="form-group">
+          <label class="form-label">Mot de passe</label>
+          <input type="password" name="password1" placeholder="Minimum 8 caractères" required>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Confirmer</label>
+          <input type="password" name="password2" placeholder="Répétez le mot de passe" required>
+        </div>
+      </div>
+
+      {% if form_errors %}
+        <div class="alert alert-error">
+          {% for field, errs in form_errors.items %}
+            <div>{{ field }}: {{ errs|join:", " }}</div>
+          {% endfor %}
+        </div>
+      {% endif %}
+
+      <button class="btn btn-primary btn-block mt-16" type="submit">
+        Créer mon compte
+      </button>
+    </form>
+
+    <div class="auth-divider"><span>Déjà inscrit ?</span></div>
+    <a href="{% url 'login' %}" class="btn btn-secondary btn-block">Se connecter</a>
+  </div>
+</div>
+{% endblock %}

@@ -1,0 +1,146 @@
+{% extends "base.html" %}
+{% block title %}Remboursements{% endblock %}
+{% block content %}
+<div class="page-header">
+  <div>
+    <h1>Remboursements</h1>
+    <div class="subtitle">Suivi de tous les paiements effectués</div>
+  </div>
+  {% if credits_dispo %}
+  <button class="btn btn-primary" data-modal-open="modal-pay">+ Enregistrer un paiement</button>
+  {% endif %}
+</div>
+
+<div class="stats-grid">
+  <div class="stat-card">
+    <div class="icon-bg">↺</div>
+    <div class="label">Total reçu</div>
+    <div class="value">{{ stats.recus }} F</div>
+    <div class="trend up">tous crédits confondus</div>
+  </div>
+  <div class="stat-card">
+    <div class="icon-bg">₣</div>
+    <div class="label">Crédits en cours</div>
+    <div class="value">{{ credits_dispo|length }}</div>
+    <div class="trend">nécessitant remboursement</div>
+  </div>
+</div>
+
+<div class="table-wrap">
+  <table class="table">
+    <thead>
+      <tr>
+        <th>Crédit</th>
+        <th>Client</th>
+        <th>Montant payé</th>
+        <th>Pénalité</th>
+        <th>Date</th>
+        <th>Commentaire</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for r in object_list %}
+      <tr>
+        <td><a href="{% url 'credit_detail' r.credit.pk %}" style="font-weight:600;">#{{ r.credit.pk }}</a></td>
+        <td>{{ r.credit.client.get_full_name|default:r.credit.client.username }}</td>
+        <td><strong>{{ r.amount_paid }} F</strong></td>
+        <td>{% if r.penalty %}<span class="text-bordeaux">{{ r.penalty }} F</span>{% else %}—{% endif %}</td>
+        <td>{{ r.payment_date|date:"d/m/Y" }}</td>
+        <td class="text-muted text-sm">{{ r.comments|default:"—" }}</td>
+      </tr>
+      {% empty %}
+      <tr><td colspan="6" class="empty-state"><p class="text-muted">Aucun remboursement enregistré.</p></td></tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
+
+<!-- Modal d'enregistrement de paiement -->
+<div class="modal-backdrop" id="modal-pay">
+  <div class="modal">
+    <div class="modal-header">
+      <h3>Enregistrer un paiement</h3>
+      <button class="modal-close" data-modal-close>&times;</button>
+    </div>
+    <form method="post" action="{% url 'remboursement_list' %}">
+      {% csrf_token %}
+      {% if form_errors %}
+      <div class="alert alert-error">{{ form_errors }}</div>
+      {% endif %}
+
+      <div class="form-group">
+        <label class="form-label">Crédit concerné</label>
+        <select name="credit" id="credit-select" required>
+          <option value="">— Sélectionnez un crédit —</option>
+          {% for c in credits_dispo %}
+          <option value="{{ c.pk }}" data-schedules="{{ c.schedules_list|length }}">
+            #{{ c.pk }} — {{ c.client.get_full_name|default:c.client.username }} — Reste: {{ c.reste }} F
+          </option>
+          {% endfor %}
+        </select>
+      </div>
+
+      <div class="form-group" id="schedule-group" style="display:none;">
+        <label class="form-label">Échéance concernée (optionnel)</label>
+        <select name="schedule" id="schedule-select">
+          <option value="">— Paiement libre —</option>
+        </select>
+      </div>
+
+      <div class="form-group">
+        <label class="form-label">Montant (F CFA)</label>
+        <input type="number" name="montant" required min="1" placeholder="Ex: 50000">
+      </div>
+
+      <div class="form-group">
+        <label class="form-label">Commentaire</label>
+        <input type="text" name="comments" placeholder="Ex: Paiement Mobile Money Orange">
+      </div>
+
+      <button class="btn btn-primary btn-block" type="submit">Enregistrer le paiement</button>
+    </form>
+  </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+(function() {
+  const creditSelect = document.getElementById('credit-select');
+  const scheduleGroup = document.getElementById('schedule-group');
+  const scheduleSelect = document.getElementById('schedule-select');
+  if (!creditSelect) return;
+
+  const schedulesData = {};
+  {% for c in credits_dispo %}
+    {% if c.schedules_list %}
+      schedulesData[{{ c.pk }}] = [
+        {% for s in c.schedules_list %}
+          { id: {{ s.id }}, due: "{{ s.due_date|date:'d/m/Y' }}", amount: "{{ s.amount_due }}", status: "{{ s.get_status_display }}" },
+        {% endfor %}
+      ];
+    {% else %}
+      schedulesData[{{ c.pk }}] = [];
+    {% endif %}
+  {% endfor %}
+
+  creditSelect.addEventListener('change', function() {
+    const pk = parseInt(this.value);
+    if (!pk) { scheduleGroup.style.display = 'none'; return; }
+    const schedules = schedulesData[pk] || [];
+    scheduleSelect.innerHTML = '<option value="">— Paiement libre —</option>';
+    var pendingCount = 0;
+    schedules.forEach(function(s) {
+      if (s.status !== 'Payée') {
+        const opt = document.createElement('option');
+        opt.value = s.id;
+        opt.textContent = s.due + ' — ' + s.amount + ' F';
+        scheduleSelect.appendChild(opt);
+        pendingCount++;
+      }
+    });
+    scheduleGroup.style.display = pendingCount > 0 ? 'block' : 'none';
+  });
+})();
+</script>
+{% endblock %}

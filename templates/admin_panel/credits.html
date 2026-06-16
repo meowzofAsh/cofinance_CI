@@ -1,0 +1,72 @@
+{% extends "base.html" %}
+{% block title %}Tous les crédits{% endblock %}
+{% block content %}
+<div class="page-header">
+  <div>
+    <h1>Tous les crédits</h1>
+    <div class="subtitle">Vue complète — {{ credits_list|length }} crédit(s)</div>
+  </div>
+  <div class="flex gap-8">
+    <a href="{% url 'admin:credits_credit_changelist' %}" class="btn btn-secondary">⚙ Interface admin</a>
+    <a href="{% url 'dashboard' %}" class="btn btn-ghost">← Retour</a>
+  </div>
+</div>
+
+<div class="table-wrap">
+  <table class="table">
+    <thead>
+      <tr>
+        <th>#</th>
+        <th>Client</th>
+        <th>Montant</th>
+        <th>Durée</th>
+        <th>Score</th>
+        <th>Statut</th>
+        <th>Date</th>
+        <th>Action</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for credit in credits_list %}
+      <tr>
+        <td style="font-weight:600;">#{{ credit.pk }}</td>
+        <td><strong>{{ credit.client.get_full_name|default:credit.client.username }}</strong></td>
+        <td>{{ credit.amount }} F</td>
+        <td>{{ credit.duration }} mois</td>
+        <td>
+          <span class="badge {% if credit.eligibility_score >= 70 %}badge-success{% elif credit.eligibility_score >= 40 %}badge-warning{% else %}badge-danger{% endif %}">
+            {{ credit.eligibility_score }}
+          </span>
+        </td>
+        <td>
+          <span class="badge 
+            {% if credit.status == 'DECAISSEE' %}badge-success
+            {% elif credit.status == 'APPROUVEE' %}badge-gold
+            {% elif credit.status == 'EN_ANALYSE' %}badge-info
+            {% elif credit.status == 'REJETEE' %}badge-danger
+            {% else %}badge-warning{% endif %}">
+            {{ credit.get_status_display }}
+          </span>
+        </td>
+        <td class="text-muted text-sm">{{ credit.created_at|date:"d/m/Y" }}</td>
+        <td>
+          <div class="flex gap-8">
+            <a href="{% url 'credit_detail' credit.pk %}" class="btn btn-sm btn-ghost">Détail</a>
+            <form method="post" action="{% url 'credit_change_status' credit.pk %}" style="display:flex;gap:4px;">
+              {% csrf_token %}
+              <select name="status" onchange="this.form.submit()" style="font-size:.78rem;padding:4px 8px;border-radius:6px;border:1px solid var(--border);">
+                {% for val, label in credit.STATUS_CHOICES %}
+                <option value="{{ val }}" {% if credit.status == val %}selected{% endif %}>{{ label }}</option>
+                {% endfor %}
+              </select>
+            </form>
+          </div>
+        </td>
+      </tr>
+      {% empty %}
+      <tr><td colspan="8" class="empty-state"><p class="text-muted">Aucun crédit.</p></td></tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
+{% endblock %}

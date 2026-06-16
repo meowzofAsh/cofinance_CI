@@ -1,0 +1,81 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>{% block title %}COFINANCE CI{% endblock %} — Microfinance & Assurance</title>
+  <meta name="description" content="Plateforme premium de microfinance et d'assurance COFINANCE CI">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="{% static 'css/style.css' %}">
+  {% block extra_css %}{% endblock %}
+</head>
+<body>
+  <div class="app">
+    {% block sidebar %}
+      {% include "components/sidebar.html" %}
+    {% endblock %}
+
+    <main class="main">
+      {% include "components/alerts.html" %}
+      {% block content %}{% endblock %}
+      {% include "components/footer.html" %}
+    </main>
+  </div>
+
+  {% block navbar %}
+    {% include "components/navbar.html" %}
+  {% endblock %}
+
+  <!-- NPS Survey Modal -->
+  <div class="modal-backdrop" id="nps-modal">
+    <div class="modal" style="max-width:480px;">
+      <div class="modal-header">
+        <h3>Votre avis nous intéresse</h3>
+        <button class="modal-close" data-modal-close>&times;</button>
+      </div>
+      <form method="post" action="{% url 'nps_submit' %}" id="nps-form">
+        {% csrf_token %}
+        <input type="hidden" name="score" id="nps-score-value">
+        <input type="hidden" name="context_type" id="nps-context-type" value="">
+        <input type="hidden" name="context_id" id="nps-context-id" value="">
+
+        <div class="nps-prompt">
+          <h3>Quelle est votre satisfaction ?</h3>
+          <p>Sur une échelle de 0 à 10, recommanderiez-vous COFINANCE CI ?</p>
+        </div>
+
+        <div class="nps-score-grid" id="nps-score-grid">
+          {% for i in "012345678910"|slice:":11" %}
+          <button type="button" class="nps-score-btn" data-score="{{ forloop.counter0 }}">
+            {{ forloop.counter0 }}
+            <span class="nps-label">{% if forloop.counter0 >= 9 %}Excellent{% elif forloop.counter0 >= 7 %}Bien{% else %}À améliorer{% endif %}</span>
+          </button>
+          {% endfor %}
+        </div>
+
+        <div class="nps-category" id="nps-category-preview"></div>
+
+        <div style="text-align:center;margin-bottom:12px;">
+          <button type="button" id="nps-toggle-feedback" class="btn btn-sm btn-ghost">Ajouter un commentaire</button>
+        </div>
+
+        <div id="nps-feedback-group" style="display:none;">
+          <div class="form-group">
+            <label class="form-label">Votre commentaire (optionnel)</label>
+            <textarea name="comment" id="nps-comment" rows="3" placeholder="Partagez votre expérience..."></textarea>
+          </div>
+        </div>
+
+        <button type="submit" class="btn btn-primary btn-block" id="nps-submit-btn" disabled>Envoyer mon avis</button>
+      </form>
+    </div>
+  </div>
+
+  <script src="{% static 'js/app.js' %}"></script>
+  <script src="{% static 'js/nps.js' %}"></script>
+  {% block extra_js %}{% endblock %}
+</body>
+</html>

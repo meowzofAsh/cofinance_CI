@@ -1,0 +1,55 @@
+{% load static %}
+<aside class="sidebar">
+  <button class="sidebar-toggle" type="button" aria-label="Réduire">≡</button>
+  <div class="sidebar-head">
+    <div class="logo">C</div>
+    <div class="brand-text">COFINANCE<small>CÔTE D'IVOIRE</small></div>
+  </div>
+  <nav class="sidebar-nav">
+    <div class="sidebar-section">Navigation</div>
+    <a href="{% url 'dashboard' %}" class="nav-item {% if request.resolver_match.url_name == 'dashboard' %}active{% endif %}">
+      <span class="ico">⌂</span><span>Tableau de bord</span>
+    </a>
+    <a href="{% url 'credit_list' %}" class="nav-item {% if 'credit' in request.resolver_match.url_name and 'admin' not in request.resolver_match.url_name %}active{% endif %}">
+      <span class="ico">₣</span><span>Crédits</span>
+    </a>
+    <a href="{% url 'remboursement_list' %}" class="nav-item {% if request.resolver_match.url_name == 'remboursement_list' %}active{% endif %}">
+      <span class="ico">↺</span><span>Remboursements</span>
+    </a>
+    <a href="{% url 'assurance_list' %}" class="nav-item {% if request.resolver_match.url_name == 'assurance_list' %}active{% endif %}">
+      <span class="ico">◈</span><span>Assurances</span>
+    </a>
+    <a href="{% url 'notification_list' %}" class="nav-item">
+      <span class="ico">◉</span><span>Notifications</span>
+      {% if user.notifications_count %}
+      <span class="badge badge-bordeaux notif-badge" style="margin-left:auto;">{{ user.notifications_count }}</span>
+      {% endif %}
+    </a>
+    <a href="{% url 'chat_conversations' %}" class="nav-item {% if request.resolver_match.url_name == 'chat_conversations' or request.resolver_match.url_name == 'chat_room' %}active{% endif %}">
+      <span class="ico">✉</span><span>Messages</span>
+    </a>
+    <a href="{% url 'profile' %}" class="nav-item {% if request.resolver_match.url_name == 'profile' %}active{% endif %}">
+      <span class="ico">◔</span><span>Profil</span>
+    </a>
+
+    {% if user.is_admin_role %}
+    <div class="sidebar-section">Administration</div>
+    <a href="{% url 'admin_users' %}" class="nav-item {% if request.resolver_match.url_name == 'admin_users' %}active{% endif %}">
+      <span class="ico">☰</span><span>Utilisateurs</span>
+    </a>
+    <a href="{% url 'admin_credits' %}" class="nav-item {% if request.resolver_match.url_name == 'admin_credits' %}active{% endif %}">
+      <span class="ico">₣</span><span>Tous les crédits</span>
+    </a>
+    <a href="{% url 'admin:index' %}" class="nav-item">
+      <span class="ico">⚙</span><span>Django Admin</span>
+    </a>
+    {% endif %}
+
+    {% if user.is_authenticated %}
+    <div class="sidebar-section">Compte</div>
+    <a href="{% url 'logout' %}" class="nav-item" style="color:var(--text-muted);">
+      <span class="ico">⎋</span><span>Déconnexion</span>
+    </a>
+    {% endif %}
+  </nav>
+</aside>

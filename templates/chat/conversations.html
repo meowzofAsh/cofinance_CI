@@ -1,0 +1,97 @@
+{% extends "base.html" %}
+{% block title %}Messages{% endblock %}
+{% block content %}
+<div class="page-header">
+  <div>
+    <h1>Messages</h1>
+    <div class="subtitle">{{ conversations|length }} conversation(s)</div>
+  </div>
+  {% if user.role == "CLIENT" %}
+  <form method="post" action="{% url 'chat_conversations' %}" style="margin:0;">
+    {% csrf_token %}
+    <button class="btn btn-primary" type="submit" name="new_conv" value="1">✉ Nouvelle conversation</button>
+  </form>
+  {% endif %}
+</div>
+
+<div class="chat-layout">
+  <aside class="chat-sidebar">
+    <div class="chat-sidebar-header">
+      <h3>Conversations</h3>
+      <span class="badge badge-bordeaux" style="font-size:.7rem;">{{ conversations|length }}</span>
+    </div>
+    <div class="chat-search">
+      <input type="text" placeholder="🔍 Rechercher..." id="chat-filter-input">
+    </div>
+    <div class="conversation-list" id="conversation-list">
+      {% for conv in conversations %}
+      <a href="{% url 'chat_room' conv.id %}" class="conversation-item" data-name="{{ conv.client_name|lower }} {{ conv.agent_name|lower }}">
+        <div class="conv-avatar">{{ conv.client.first_name|first|default:"?" }}{{ conv.client.last_name|first }}</div>
+        {% if conv.client.is_online %}<span class="online-indicator" style="position:absolute;bottom:18px;left:44px;"></span>{% endif %}
+        <div class="conv-info">
+          <div class="conv-name">
+            {{ conv.client_name }}
+            {% if conv.agent %}
+            <span class="text-muted" style="font-size:.7rem;">— {{ conv.agent_name }}</span>
+            {% endif %}
+          </div>
+          <div class="conv-preview">
+            {% with last=conv.last_message %}
+              {{ last.content|truncatechars:40|default:conv.get_status_display }}
+            {% endwith %}
+          </div>
+        </div>
+        <div class="conv-meta">
+          <span class="conv-time">{{ conv.updated_at|timesince }}</span>
+          <span class="badge {% if conv.status == 'OPEN' %}badge-success{% else %}badge{% endif %}" style="font-size:.6rem;">
+            {{ conv.get_status_display }}
+          </span>
+        </div>
+      </a>
+      {% empty %}
+      <div class="empty-state" style="padding:30px 20px;text-align:center;">
+        <p class="text-muted">
+          {% if user.role == "CLIENT" %}
+            Aucune conversation. <a href="#" onclick="document.querySelector('[name=new_conv]')?.click();return false;">Démarrer une conversation</a>
+          {% else %}
+            Aucune conversation pour le moment.
+          {% endif %}
+        </p>
+      </div>
+      {% endfor %}
+    </div>
+  </aside>
+
+  <section class="chat-main">
+    <div class="chat-welcome">
+      <div class="chat-welcome-icon">✉</div>
+      <h3>Vos messages</h3>
+      <p class="text-muted">Sélectionnez une conversation pour commencer à discuter</p>
+      {% if user.role == "CLIENT" %}
+      <form method="post" action="{% url 'chat_conversations' %}" style="margin-top:16px;">
+        {% csrf_token %}
+        <button class="btn btn-primary" type="submit" name="new_conv" value="1">Démarrer une conversation</button>
+      </form>
+      {% endif %}
+    </div>
+  </section>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+  const filterInput = document.getElementById('chat-filter-input');
+  const list = document.getElementById('conversation-list');
+  if (filterInput && list) {
+    filterInput.addEventListener('input', function() {
+      const q = this.value.toLowerCase();
+      list.querySelectorAll('.conversation-item').forEach(function(item) {
+        var name = item.dataset.name || '';
+        item.style.display = name.includes(q) ? '' : 'none';
+      });
+    });
+  }
+});
+</script>
+{% endblock %}

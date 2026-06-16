@@ -1,0 +1,47 @@
+{% extends "base.html" %}
+{% block title %}Souscrire à {{ product.name }}{% endblock %}
+{% block content %}
+<div class="page-header">
+  <div>
+    <h1>Souscrire</h1>
+    <div class="subtitle">{{ product.name }}</div>
+  </div>
+  <a href="{% url 'assurance_list' %}" class="btn btn-ghost">← Retour au catalogue</a>
+</div>
+
+<div class="card" style="max-width:500px;margin:0 auto;">
+  <div style="text-align:center;margin-bottom:20px;">
+    <div style="font-size:3rem;margin-bottom:8px;">🛡️</div>
+    <h2>{{ product.name }}</h2>
+    <p class="text-muted">{{ product.description }}</p>
+  </div>
+
+  <div style="background:var(--cream);padding:20px;border-radius:var(--radius);margin-bottom:20px;">
+    <div class="flex-between mb-8">
+      <span class="text-muted">Prix</span>
+      <span style="font-size:1.4rem;font-weight:700;color:var(--bordeaux);">{{ product.price }} F</span>
+    </div>
+    <div class="flex-between mb-8">
+      <span class="text-muted">Durée de couverture</span>
+      <span style="font-weight:600;">{{ product.duration_days }} jours</span>
+    </div>
+    <div class="flex-between">
+      <span class="text-muted">Coût par jour</span>
+      <span style="font-weight:600;">{{ product.price|floatformat:0|divisibleby:product.duration_days|yesno:"—," }} F/jour</span>
+    </div>
+  </div>
+
+  <form method="post">
+    {% csrf_token %}
+    <div class="alert alert-info">
+      En cliquant sur "Souscrire", vous acceptez les conditions générales de {{ product.name }}.
+    </div>
+    <button class="btn btn-primary btn-block" type="submit">
+      ✓ Confirmer la souscription
+    </button>
+  </form>
+  </div>
+
+<!-- NPS trigger for insurance subscription -->
+<div data-nps-trigger="assurance_{{ product.pk }}" data-nps-context="ASSURANCE" data-nps-context-id="{{ product.pk }}" style="display:none;"></div>
+{% endblock %}

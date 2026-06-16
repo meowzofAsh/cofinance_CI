@@ -1,0 +1,20 @@
+<nav class="navbar-float" aria-label="Navigation rapide">
+  <a href="{% url 'dashboard' %}" class="{% if request.resolver_match.url_name == 'dashboard' %}active{% endif %}">
+    <span class="ico">⌂</span><span>Accueil</span>
+  </a>
+  <a href="{% url 'credit_list' %}" class="{% if 'credit' in request.resolver_match.url_name %}active{% endif %}">
+    <span class="ico">₣</span><span>Crédits</span>
+  </a>
+  <a href="{% url 'chat_conversations' %}" class="{% if 'chat' in request.resolver_match.url_name %}active{% endif %}">
+    <span class="ico">✉</span><span>Chat</span>
+  </a>
+  <a href="{% url 'notification_list' %}">
+    <span class="ico">◉</span><span>Alertes</span>
+    {% if user.notifications_count %}
+    <span class="badge badge-bordeaux" style="position:absolute;top:2px;right:2px;font-size:.55rem;padding:1px 5px;">{{ user.notifications_count }}</span>
+    {% endif %}
+  </a>
+  <a href="{% url 'profile' %}" class="{% if request.resolver_match.url_name == 'profile' %}active{% endif %}">
+    <span class="ico">◔</span><span>Profil</span>
+  </a>
+</nav>

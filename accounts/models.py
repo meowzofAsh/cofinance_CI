@@ -58,6 +58,15 @@ class User(AbstractUser):
         default=False,
     )
 
+    is_online = models.BooleanField(
+        default=False,
+    )
+
+    last_seen = models.DateTimeField(
+        null=True,
+        blank=True,
+    )
+
     created_at = models.DateTimeField(
         auto_now_add=True,
     )
@@ -88,3 +97,8 @@ class User(AbstractUser):
     @property
     def is_admin_role(self):
         return self.role == self.ADMIN
+
+    @property
+    def notifications_count(self):
+        from notifications.models import Notification
+        return Notification.objects.filter(user=self, is_read=False).count()

@@ -1,0 +1,140 @@
+{% extends "base.html" %}
+{% load static %}
+{% block title %}{{ conversation.client_name }}{% endblock %}
+{% block content %}
+<div class="page-header">
+  <div><h1>Messages</h1><div class="subtitle">Conversation avec {{ conversation.client_name }}</div></div>
+  <a href="{% url 'chat_conversations' %}" class="btn btn-ghost">← Toutes les conversations</a>
+</div>
+
+<div class="chat-layout">
+  <aside class="chat-sidebar">
+    <div class="chat-sidebar-header">
+      <h3>Conversations</h3>
+      <span class="badge badge-bordeaux" style="font-size:.7rem;">{{ conversations|length }}</span>
+    </div>
+    <div class="chat-search">
+      <input type="text" placeholder="🔍 Rechercher une conversation...">
+    </div>
+    <div class="conversation-list">
+      {% for conv in conversations %}
+      <a href="{% url 'chat_room' conv.id %}" class="conversation-item {% if conv.id == conversation.id %}active{% endif %}">
+        <div class="conv-avatar">{{ conv.client.first_name|first|default:"?" }}{{ conv.client.last_name|first }}</div>
+        <div class="conv-info">
+          <div class="conv-name">
+            {{ conv.client_name }}
+            {% if conv.client.is_online %}<span class="online-indicator"></span>{% endif %}
+          </div>
+          <div class="conv-preview">
+            {% with last=conv.last_message %}
+              {{ last.content|truncatechars:30|default:conv.get_status_display }}
+            {% endwith %}
+          </div>
+        </div>
+        <div class="conv-meta">
+          <span class="conv-time">{{ conv.updated_at|timesince }}</span>
+          {% if conv.status == "OPEN" %}
+          <span class="badge badge-success" style="font-size:.6rem;">Ouverte</span>
+          {% else %}
+          <span class="badge" style="font-size:.6rem;">Fermée</span>
+          {% endif %}
+        </div>
+      </a>
+      {% empty %}
+      <div class="empty-state"><p class="text-muted">Aucune conversation.</p></div>
+      {% endfor %}
+    </div>
+  </aside>
+
+  <section class="chat-main">
+    <header class="chat-header">
+      <div class="chat-header-info">
+        <div class="chat-avatar">{{ conversation.client.first_name|first|default:"?" }}{{ conversation.client.last_name|first }}</div>
+        <div>
+          <div class="chat-header-name">
+            {{ conversation.client_name }}
+            {% if conversation.agent and user.role != "CLIENT" %}
+            <span class="text-muted" style="font-weight:400;font-size:.8rem;">— {{ conversation.agent_name }}</span>
+            {% endif %}
+          </div>
+          <div class="chat-header-status">
+            <span id="status-dot" class="status-dot offline"></span>
+            <span id="status-text">Hors ligne</span>
+          </div>
+        </div>
+      </div>
+      {% if user.role == "ADMIN" or user.role == "AGENT" %}
+      <div class="chat-header-actions">
+        {% if conversation.status == "OPEN" %}
+          <form method="post" action="{% url 'chat_room' conversation.id %}" style="display:inline;">
+            {% csrf_token %}
+            <input type="hidden" name="message" value=".nps">
+            {% if conversation.agent %}
+              <span class="badge badge-success"><span class="status-dot online" style="margin:0;"></span> {{ conversation.agent_name }}</span>
+            {% else %}
+              <button class="btn btn-sm btn-secondary" type="submit" formaction="{% url 'api_chat_assign' conversation.id %}">Prendre en charge</button>
+            {% endif %}
+          </form>
+          <form method="post" action="{% url 'api_chat_close' conversation.id %}" style="display:inline;">
+            {% csrf_token %}
+            <button class="btn btn-sm btn-ghost" type="submit" style="color:#c64141;">⟳ Fermer</button>
+          </form>
+        {% else %}
+          <span class="badge badge-danger">Fermée</span>
+        {% endif %}
+      </div>
+      {% endif %}
+    </header>
+
+    <div class="chat-messages" id="chat-messages"
+         data-room="{{ conversation.id }}"
+         data-user-id="{{ user.id }}">
+      {% for msg in messages_list %}
+      <div class="message {% if msg.sender == user %}out{% else %}in{% endif %}">
+        <div class="message-content">{{ msg.content }}</div>
+        <div class="message-meta">
+          <span class="message-time">{{ msg.sent_at|date:"H:i" }}</span>
+          {% if msg.sender == user %}
+          <span class="message-status">✓</span>
+          {% endif %}
+        </div>
+      </div>
+      {% empty %}
+      <div class="chat-empty">Démarrez la conversation en envoyant un message ci-dessous ✨</div>
+      {% endfor %}
+    </div>
+
+    <!-- Typing indicator -->
+    <div id="typing-indicator" class="typing" style="display:none;">
+      <span class="typing-dots"><span></span><span></span><span></span></span>
+      <span class="typing-text"></span>
+    </div>
+
+    {% if conversation.status == "OPEN" %}
+    <form class="chat-input" id="chat-form" action="{% url 'chat_room' conversation.id %}" method="post">
+      {% csrf_token %}
+      <input type="text" id="chat-input" name="message" placeholder="Écrire un message..." autocomplete="off" autofocus>
+      <button class="send-btn" type="submit" aria-label="Envoyer">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 2L11 13"/><path d="M22 2l-7 20-4-9-9-4 20-7z"/></svg>
+      </button>
+    </form>
+    {% else %}
+    <div class="chat-closed">
+      <span>Conversation fermée</span>
+      {% if user.role == "CLIENT" %}
+      <a href="{% url 'chat_conversations' %}" class="btn btn-sm btn-primary">Nouvelle conversation</a>
+      {% endif %}
+    </div>
+    {% endif %}
+  </section>
+</div>
+
+<!-- NPS trigger for chat closure -->
+{% if conversation.status == "CLOSED" and user.role == "CLIENT" %}
+<div data-nps-trigger="chat_{{ conversation.id }}" data-nps-context="CHAT" data-nps-context-id="{{ conversation.id }}" style="display:none;"></div>
+{% endif %}
+{% endblock %}
+
+{% block extra_js %}
+<script src="{% static 'js/chat.js' %}"></script>
+{% endblock %}

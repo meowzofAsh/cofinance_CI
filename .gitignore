@@ -1,0 +1,36 @@
+# Python
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+
+# Environnement virtuel
+.venv/
+venv/
+env/
+
+# Base de données
+db.sqlite3
+*.sqlite3
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# Variables d'environnement
+.env
+.env.production
+.env.local
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Rapports / fichiers temporaires
+check_*.txt
+*.log
+
+# Migrations (optionnel - si tu veux regenerer)
+# */migrations/*.py

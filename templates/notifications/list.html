@@ -1,0 +1,46 @@
+{% extends "base.html" %}
+{% block title %}Notifications{% endblock %}
+{% block content %}
+<div class="page-header">
+  <div>
+    <h1>Notifications</h1>
+    <div class="subtitle">
+      {% if unread_count %}
+      <span class="badge badge-bordeaux">{{ unread_count }} non lue(s)</span>
+      {% else %}
+      Aucune notification non lue
+      {% endif %}
+    </div>
+  </div>
+  {% if unread_count %}
+  <form method="post" action="{% url 'notification_mark_all' %}" style="margin:0;">
+    {% csrf_token %}
+    <button class="btn btn-secondary" type="submit">✓ Tout marquer comme lu</button>
+  </form>
+  {% endif %}
+</div>
+
+<div class="notification-list">
+  {% for notif in object_list %}
+  <div class="notif-item {% if not notif.is_read %}unread{% endif %}">
+    <div class="notif-icon">
+      {% if notif.title|slice:":7" == "Crédit" %}₣
+      {% elif notif.title|slice:":7" == "Rembour" %}↺
+      {% elif notif.title|slice:":7" == "Assuran" %}◈
+      {% elif notif.title|slice:":7" == "Rappel" %}⏰
+      {% else %}◉{% endif %}
+    </div>
+    <div class="notif-body">
+      <div class="notif-title">{{ notif.title }}</div>
+      <div class="notif-desc">{{ notif.message }}</div>
+    </div>
+    <div class="notif-time">{{ notif.created_at|timesince }}</div>
+  </div>
+  {% empty %}
+  <div class="card" style="text-align:center;padding:60px;">
+    <div style="font-size:3rem;margin-bottom:12px;opacity:.3;">◉</div>
+    <p class="text-muted">Aucune notification pour le moment.</p>
+  </div>
+  {% endfor %}
+</div>
+{% endblock %}

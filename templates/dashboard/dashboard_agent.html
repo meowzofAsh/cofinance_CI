@@ -1,0 +1,93 @@
+{% extends "base.html" %}
+{% block title %}Tableau de bord Agent{% endblock %}
+{% block content %}
+<div class="page-header">
+  <div>
+    <h1>Bonjour, {{ user.first_name|default:user.username }}</h1>
+    <div class="subtitle">Vue d'ensemble de vos activités — {% now "l d F Y" %}</div>
+  </div>
+  <div class="flex gap-8">
+    <a href="{% url 'chat_conversations' %}" class="btn btn-secondary">✉ Messages</a>
+    <a href="{% url 'credit_list' %}" class="btn btn-primary">Voir les crédits</a>
+  </div>
+</div>
+
+<div class="stats-grid">
+  <div class="stat-card">
+    <div class="icon-bg">👥</div>
+    <div class="label">Clients</div>
+    <div class="value">{{ stats.total_clients }}</div>
+    <div class="trend up">inscrits sur la plateforme</div>
+  </div>
+  <div class="stat-card">
+    <div class="icon-bg">₣</div>
+    <div class="label">Crédits à traiter</div>
+    <div class="value">{{ stats.credits_a_traiter }}</div>
+    <div class="trend">{{ stats.total_credits }} au total</div>
+  </div>
+  <div class="stat-card">
+    <div class="icon-bg">💰</div>
+    <div class="label">Crédits décaissés</div>
+    <div class="value">{{ stats.total_decaisses }}</div>
+    <div class="trend up">Moyen : {{ stats.credit_moyen }} F</div>
+  </div>
+  <div class="stat-card">
+    <div class="icon-bg">↺</div>
+    <div class="label">Remboursements</div>
+    <div class="value">{{ stats.total_remboursements }}</div>
+    <div class="trend">{{ stats.souscriptions_actives }} assurances actives</div>
+  </div>
+</div>
+
+<div class="grid-2">
+  <div class="card">
+    <div class="card-header">
+      <span class="card-title">Crédits à traiter</span>
+      <a href="{% url 'credit_list' %}" class="btn btn-sm btn-ghost">Voir tout →</a>
+    </div>
+    {% for credit in credits_a_traiter %}
+    <div class="list-item">
+      <div class="list-item-left">
+        <strong>{{ credit.client.get_full_name|default:credit.client.username }}</strong>
+        <div class="text-muted text-sm">{{ credit.amount }} F CFA — {{ credit.purpose|truncatechars:25 }}</div>
+      </div>
+      <div class="list-item-right">
+        <span class="badge 
+          {% if credit.status == 'SOUMISE' %}badge-warning
+          {% elif credit.status == 'EN_ANALYSE' %}badge-info
+          {% endif %}">
+          {{ credit.get_status_display }}
+        </span>
+        <a href="{% url 'credit_detail' credit.pk %}" class="btn btn-sm btn-ghost">Voir</a>
+      </div>
+    </div>
+    {% empty %}
+    <div class="empty-state">
+      <p class="text-muted">Aucun crédit à traiter.</p>
+    </div>
+    {% endfor %}
+  </div>
+
+  <div class="card">
+    <div class="card-header">
+      <span class="card-title">Derniers remboursements</span>
+      <a href="{% url 'remboursement_list' %}" class="btn btn-sm btn-ghost">Voir tout →</a>
+    </div>
+    {% for r in derniers_remboursements %}
+    <div class="list-item">
+      <div class="list-item-left">
+        <strong>{{ r.credit.client.get_full_name|default:r.credit.client.username }}</strong>
+        <div class="text-muted text-sm">{{ r.amount_paid }} F — {{ r.payment_date|date:"d/m/Y" }}</div>
+      </div>
+      <div class="list-item-right">
+        <span class="badge badge-success">Crédit #{{ r.credit.pk }}</span>
+      </div>
+    </div>
+    {% empty %}
+    <div class="empty-state">
+      <p class="text-muted">Aucun remboursement récent.</p>
+    </div>
+    {% endfor %}
+  </div>
+</div>
+{% endblock %}

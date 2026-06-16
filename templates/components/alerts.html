@@ -1,0 +1,10 @@
+{# Messages Django — django.contrib.messages #}
+{% if messages %}
+<div class="alerts">
+  {% for message in messages %}
+    <div class="alert alert-{{ message.tags|default:'info' }}" data-auto role="alert">
+      <span>{{ message }}</span>
+    </div>
+  {% endfor %}
+</div>
+{% endif %}

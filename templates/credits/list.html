@@ -1,0 +1,84 @@
+{% extends "base.html" %}
+{% block title %}Crédits{% endblock %}
+{% block content %}
+<div class="page-header">
+  <div>
+    <h1>Crédits</h1>
+    <div class="subtitle">{{ object_list|length }} crédit(s) au total</div>
+  </div>
+  <a href="{% url 'credit_create' %}" class="btn btn-primary">+ Nouveau crédit</a>
+</div>
+
+<div class="card mb-24">
+  <form method="get" class="flex gap-12" style="flex-wrap:wrap;align-items:end;">
+    <div class="form-group" style="margin-bottom:0;flex:1;min-width:200px;">
+      <label class="form-label">Rechercher</label>
+      <input type="text" name="q" placeholder="Client, objet..." value="{{ request.GET.q }}">
+    </div>
+    <div class="form-group" style="margin-bottom:0;min-width:160px;">
+      <label class="form-label">Statut</label>
+      <select name="statut">
+        <option value="">Tous</option>
+        <option value="SOUMISE" {% if request.GET.statut == 'SOUMISE' %}selected{% endif %}>Soumise</option>
+        <option value="EN_ANALYSE" {% if request.GET.statut == 'EN_ANALYSE' %}selected{% endif %}>En analyse</option>
+        <option value="APPROUVEE" {% if request.GET.statut == 'APPROUVEE' %}selected{% endif %}>Approuvée</option>
+        <option value="REJETEE" {% if request.GET.statut == 'REJETEE' %}selected{% endif %}>Rejetée</option>
+        <option value="DECAISSEE" {% if request.GET.statut == 'DECAISSEE' %}selected{% endif %}>Décaissée</option>
+      </select>
+    </div>
+    <button class="btn btn-secondary" type="submit">Filtrer</button>
+    {% if request.GET.q or request.GET.statut %}
+    <a href="{% url 'credit_list' %}" class="btn btn-ghost">Réinitialiser</a>
+    {% endif %}
+  </form>
+</div>
+
+<div class="table-wrap">
+  <table class="table">
+    <thead>
+      <tr>
+        <th>#</th>
+        <th>Client</th>
+        <th>Montant</th>
+        <th>Durée</th>
+        <th>Score</th>
+        <th>Statut</th>
+        <th>Date</th>
+        <th>Actions</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for credit in object_list %}
+      <tr>
+        <td style="font-weight:600;">#{{ credit.pk }}</td>
+        <td><strong>{{ credit.client.get_full_name|default:credit.client.username }}</strong></td>
+        <td>{{ credit.amount }} F</td>
+        <td>{{ credit.duration }} mois</td>
+        <td>
+          <span class="badge {% if credit.eligibility_score >= 70 %}badge-success{% elif credit.eligibility_score >= 40 %}badge-warning{% else %}badge-danger{% endif %}">
+            {{ credit.eligibility_score }}
+          </span>
+        </td>
+        <td>
+          <span class="badge 
+            {% if credit.status == 'DECAISSEE' %}badge-success
+            {% elif credit.status == 'APPROUVEE' %}badge-gold
+            {% elif credit.status == 'EN_ANALYSE' %}badge-info
+            {% elif credit.status == 'REJETEE' %}badge-danger
+            {% else %}badge-warning{% endif %}">
+            {{ credit.get_status_display }}
+          </span>
+        </td>
+        <td class="text-muted text-sm">{{ credit.created_at|date:"d/m/Y" }}</td>
+        <td class="actions">
+          <a href="{% url 'credit_detail' credit.pk %}" class="btn btn-sm btn-ghost">Détail</a>
+          <a href="{% url 'credit_update' credit.pk %}" class="btn btn-sm btn-secondary">Éditer</a>
+        </td>
+      </tr>
+      {% empty %}
+      <tr><td colspan="8" class="empty-state"><p class="text-muted">Aucun crédit trouvé.</p></td></tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
+{% endblock %}

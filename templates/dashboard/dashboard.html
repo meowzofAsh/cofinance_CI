@@ -1,0 +1,117 @@
+{% extends "base.html" %}
+{% block title %}Mon Tableau de bord{% endblock %}
+{% block content %}
+<div class="page-header">
+  <div>
+    <h1>Bonjour, {{ user.first_name|default:user.username }}</h1>
+    <div class="subtitle">
+      {% now "l d F Y" %} — Vue d'ensemble de votre activité
+    </div>
+  </div>
+  <div class="flex gap-8">
+    <a href="{% url 'chat_conversations' %}" class="btn btn-secondary">Messages</a>
+    <a href="{% url 'credit_create' %}" class="btn btn-primary">+ Nouveau crédit</a>
+  </div>
+</div>
+
+<div class="stats-grid">
+  <div class="stat-card">
+    <div class="icon-bg">₣</div>
+    <div class="label">Crédits en cours</div>
+    <div class="value">{{ stats.credits_actifs }}</div>
+    <div class="trend up">demande(s) active(s)</div>
+  </div>
+  <div class="stat-card">
+    <div class="icon-bg">💰</div>
+    <div class="label">Total décaissé</div>
+    <div class="value">{{ stats.total_decaisse }} F</div>
+    <div class="trend up">montant approuvé</div>
+  </div>
+  <div class="stat-card">
+    <div class="icon-bg">↺</div>
+    <div class="label">Remboursé</div>
+    <div class="value">{{ stats.total_paye }} F</div>
+    <div class="trend">{{ stats.reste }} F restant</div>
+  </div>
+  <div class="stat-card">
+    <div class="icon-bg">◈</div>
+    <div class="label">Assurances</div>
+    <div class="value">{{ stats.assurances }}</div>
+    <div class="trend up">souscription(s) active(s)</div>
+  </div>
+</div>
+
+{% if prochaine_echeance %}
+<div class="card mb-24" style="border-left:4px solid var(--gold);background:linear-gradient(135deg,var(--white),#fffcf0);">
+  <div class="flex-between">
+    <div class="flex gap-12" style="align-items:center;">
+      <div style="width:40px;height:40px;border-radius:50%;background:var(--warning-bg);display:grid;place-items:center;font-size:1.2rem;flex-shrink:0;">⏰</div>
+      <div>
+        <strong style="color:var(--gold-dark);">Prochaine échéance</strong>
+        <div class="text-muted" style="font-size:.85rem;margin-top:2px;">
+          Crédit #{{ prochaine_echeance.credit.pk }} — 
+          <strong>{{ prochaine_echeance.amount_due }} F CFA</strong>
+          à payer avant le <strong>{{ prochaine_echeance.due_date|date:"d M Y" }}</strong>
+        </div>
+      </div>
+    </div>
+    <a href="{% url 'remboursement_list' %}" class="btn btn-sm btn-primary">Payer</a>
+  </div>
+</div>
+{% endif %}
+
+<div class="grid-2">
+  <div class="card">
+    <div class="card-header">
+      <span class="card-title">Mes crédits</span>
+      <a href="{% url 'credit_list' %}" class="btn btn-sm btn-ghost">Voir tout →</a>
+    </div>
+    {% for credit in derniers_credits %}
+    <a href="{% url 'credit_detail' credit.pk %}" class="list-item">
+      <div class="list-item-left">
+        <strong>{{ credit.purpose|truncatechars:30 }}</strong>
+        <div class="text-muted text-sm">{{ credit.amount }} F CFA — {{ credit.duration }} mois</div>
+      </div>
+      <div class="list-item-right">
+        <span class="badge 
+          {% if credit.status == 'DECAISSEE' %}badge-success
+          {% elif credit.status == 'APPROUVEE' %}badge-gold
+          {% elif credit.status == 'EN_ANALYSE' %}badge-info
+          {% elif credit.status == 'REJETEE' %}badge-danger
+          {% else %}badge-warning{% endif %}">
+          {{ credit.get_status_display }}
+        </span>
+      </div>
+    </a>
+    {% empty %}
+    <div class="empty-state">
+      <div style="font-size:2rem;margin-bottom:8px;">₣</div>
+      <p class="text-muted">Aucun crédit pour le moment.</p>
+      <a href="{% url 'credit_create' %}" class="btn btn-sm btn-primary mt-8">Soumettre une demande</a>
+    </div>
+    {% endfor %}
+  </div>
+
+  <div class="card">
+    <div class="card-header">
+      <span class="card-title">Notifications</span>
+      <a href="{% url 'notification_list' %}" class="btn btn-sm btn-ghost">Voir tout →</a>
+    </div>
+    {% for n in dernieres_notifications %}
+    <div class="list-item">
+      <div class="list-item-left">
+        <strong class="text-sm">{{ n.title|truncatechars:40 }}</strong>
+        <div class="text-muted text-xs">{{ n.message|truncatechars:60 }}</div>
+      </div>
+      <div class="list-item-right">
+        <span class="text-xs text-muted">{{ n.created_at|timesince }}</span>
+      </div>
+    </div>
+    {% empty %}
+    <div class="empty-state">
+      <p class="text-muted">Aucune notification.</p>
+    </div>
+    {% endfor %}
+  </div>
+</div>
+{% endblock %}

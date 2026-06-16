@@ -1,0 +1,62 @@
+{% extends "base.html" %}
+{% block title %}Gestion des utilisateurs{% endblock %}
+{% block content %}
+<div class="page-header">
+  <div>
+    <h1>Utilisateurs</h1>
+    <div class="subtitle">Gérez les agents et clients de la plateforme</div>
+  </div>
+  <div class="flex gap-8">
+    <a href="{% url 'admin:accounts_user_changelist' %}" class="btn btn-secondary">⚙ Interface admin</a>
+    <a href="{% url 'dashboard' %}" class="btn btn-ghost">← Retour</a>
+  </div>
+</div>
+
+<div class="grid-2">
+  <div class="card">
+    <div class="card-header">
+      <span class="card-title">👤 Agents ({{ agents.count }})</span>
+    </div>
+    <div class="table-wrap">
+      <table class="table">
+        <thead><tr><th>Nom</th><th>Email</th><th>Téléphone</th><th>Vérifié</th></tr></thead>
+        <tbody>
+          {% for agent in agents %}
+          <tr>
+            <td><strong>{{ agent.get_full_name|default:agent.username }}</strong></td>
+            <td>{{ agent.email }}</td>
+            <td>{{ agent.phone_number|default:"—" }}</td>
+            <td>{% if agent.is_verified %}<span class="badge badge-success">✓</span>{% else %}<span class="badge badge-warning">—</span>{% endif %}</td>
+          </tr>
+          {% empty %}
+          <tr><td colspan="4" class="empty-state"><p class="text-muted">Aucun agent.</p></td></tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="card-header">
+      <span class="card-title">👥 Clients ({{ clients.count }})</span>
+    </div>
+    <div class="table-wrap">
+      <table class="table">
+        <thead><tr><th>Nom</th><th>Email</th><th>Téléphone</th><th>Région</th></tr></thead>
+        <tbody>
+          {% for client in clients %}
+          <tr>
+            <td><strong>{{ client.get_full_name|default:client.username }}</strong></td>
+            <td>{{ client.email }}</td>
+            <td>{{ client.phone_number|default:"—" }}</td>
+            <td>{{ client.region|default:"—" }}</td>
+          </tr>
+          {% empty %}
+          <tr><td colspan="4" class="empty-state"><p class="text-muted">Aucun client.</p></td></tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+</div>
+{% endblock %}

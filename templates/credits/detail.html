@@ -1,0 +1,162 @@
+{% extends "base.html" %}
+{% block title %}Crédit #{{ object.pk }}{% endblock %}
+{% block content %}
+<div class="page-header">
+  <div>
+    <h1>Crédit #{{ object.pk }}</h1>
+    <div class="subtitle">{{ object.client.get_full_name|default:object.client.username }} — {{ object.client.email }}</div>
+  </div>
+  <div class="flex gap-8">
+    {% if user.role == "ADMIN" or user.role == "AGENT" %}
+    <a href="{% url 'credit_update' object.pk %}" class="btn btn-secondary">Modifier</a>
+    {% endif %}
+    <a href="{% url 'credit_list' %}" class="btn btn-ghost">← Retour</a>
+  </div>
+</div>
+
+<div class="grid-2">
+  <div class="card">
+    <div class="card-header">
+      <span class="card-title">Informations du crédit</span>
+    </div>
+    <table class="detail-table">
+      <tr><td class="detail-label">Client</td><td class="detail-value">{{ object.client.get_full_name|default:object.client.username }}</td></tr>
+      <tr><td class="detail-label">Email</td><td class="detail-value">{{ object.client.email }}</td></tr>
+      <tr><td class="detail-label">Téléphone</td><td class="detail-value">{{ object.client.phone_number|default:"—" }}</td></tr>
+      <tr><td class="detail-label">Montant demandé</td><td class="detail-value">{{ object.amount }} F CFA</td></tr>
+      <tr><td class="detail-label">Montant approuvé</td><td class="detail-value">{{ object.approved_amount }} F CFA</td></tr>
+      <tr><td class="detail-label">Taux d'intérêt</td><td class="detail-value">{{ object.interest_rate }}%</td></tr>
+      <tr><td class="detail-label">Durée</td><td class="detail-value">{{ object.duration }} mois</td></tr>
+      <tr><td class="detail-label">Objet</td><td class="detail-value">{{ object.purpose }}</td></tr>
+      <tr><td class="detail-label">Revenu mensuel</td><td class="detail-value">{{ object.monthly_income }} F CFA</td></tr>
+      <tr><td class="detail-label">Score éligibilité</td><td class="detail-value">
+        <span class="badge {% if object.eligibility_score >= 70 %}badge-success{% elif object.eligibility_score >= 40 %}badge-warning{% else %}badge-danger{% endif %}">
+          {{ object.eligibility_score }}/100
+        </span>
+      </td></tr>
+      <tr><td class="detail-label">Début remboursement</td><td class="detail-value">{{ object.repayment_start_date|date:"d M Y"|default:"—" }}</td></tr>
+      <tr><td class="detail-label">Statut</td><td class="detail-value">
+        <span class="badge 
+          {% if object.status == 'DECAISSEE' %}badge-success
+          {% elif object.status == 'APPROUVEE' %}badge-gold
+          {% elif object.status == 'EN_ANALYSE' %}badge-info
+          {% elif object.status == 'REJETEE' %}badge-danger
+          {% else %}badge-warning{% endif %}">
+          {{ object.get_status_display }}
+        </span>
+      </td></tr>
+    </table>
+    {% if object.notes %}
+    <div class="mt-16" style="background:var(--cream);padding:12px 16px;border-radius:var(--radius-sm);">
+      <strong class="text-sm">Notes :</strong>
+      <p class="text-sm text-muted mt-4">{{ object.notes }}</p>
+    </div>
+    {% endif %}
+  </div>
+
+  <div class="card">
+    <div class="card-header">
+      <span class="card-title">Progression du remboursement</span>
+    </div>
+    <div style="background:var(--cream);height:20px;border-radius:10px;overflow:hidden;margin-bottom:12px;position:relative;">
+      <div style="width:{{ progression }}%;height:100%;background:linear-gradient(90deg,var(--bordeaux),var(--gold));border-radius:10px;transition:width .8s var(--ease);"></div>
+      <span style="position:absolute;inset:0;display:grid;place-items:center;font-size:.72rem;font-weight:600;color:{% if progression > 40 %}white{% else %}var(--text){% endif %};">
+        {{ progression }}% remboursé
+      </span>
+    </div>
+    <div class="grid-2 mt-16" style="gap:12px;">
+      <div style="background:var(--success-bg);padding:12px;border-radius:var(--radius-sm);text-align:center;">
+        <div class="text-sm text-muted">Payé</div>
+        <div style="font-weight:700;color:var(--success);">{{ total_paye }} F</div>
+      </div>
+      <div style="background:var(--danger-bg);padding:12px;border-radius:var(--radius-sm);text-align:center;">
+        <div class="text-sm text-muted">Reste</div>
+        <div style="font-weight:700;color:var(--danger);">{{ reste }} F</div>
+      </div>
+    </div>
+    <div class="flex gap-8 mt-16" style="justify-content:center;">
+      <span class="badge badge-success">{{ echeances_payees }} payée(s)</span>
+      <span class="badge badge-warning">{{ echeances_retard }} en retard</span>
+      <span class="text-muted text-sm">sur {{ echeances_total }} échéance(s)</span>
+    </div>
+  </div>
+</div>
+
+{% if schedules %}
+<div class="card mt-24">
+  <div class="card-header">
+    <span class="card-title">Échéancier de remboursement</span>
+  </div>
+  <div class="table-wrap">
+    <table class="table">
+      <thead>
+        <tr>
+          <th>#</th>
+          <th>Date d'échéance</th>
+          <th>Montant dû</th>
+          <th>Payé</th>
+          <th>Pénalité</th>
+          <th>Retard</th>
+          <th>Statut</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for s in schedules %}
+        <tr>
+          <td style="font-weight:600;">{{ forloop.counter }}</td>
+          <td>{{ s.due_date|date:"d/m/Y" }}</td>
+          <td>{{ s.amount_due }} F</td>
+          <td>{{ s.amount_paid }} F</td>
+          <td>{% if s.penalty %}<span class="text-bordeaux">{{ s.penalty }} F</span>{% else %}—{% endif %}</td>
+          <td>{% if s.days_late > 0 %}<span class="badge badge-danger">{{ s.days_late }}j</span>{% else %}✓{% endif %}</td>
+          <td>
+            <span class="badge 
+              {% if s.status == 'PAYEE' %}badge-success
+              {% elif s.status == 'RETARD' %}badge-danger
+              {% else %}badge-warning{% endif %}">
+              {{ s.get_status_display }}
+            </span>
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+{% endif %}
+
+<div class="card mt-24">
+  <div class="card-header">
+    <span class="card-title">Historique des remboursements</span>
+  </div>
+  <div class="table-wrap">
+    <table class="table">
+      <thead>
+        <tr>
+          <th>Date</th>
+          <th>Montant payé</th>
+          <th>Pénalité</th>
+          <th>Commentaire</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for r in object.remboursements.all %}
+        <tr>
+          <td>{{ r.payment_date|date:"d/m/Y" }}</td>
+          <td><strong>{{ r.amount_paid }} F</strong></td>
+          <td>{% if r.penalty %}{{ r.penalty }} F{% else %}—{% endif %}</td>
+          <td class="text-muted">{{ r.comments|default:"—" }}</td>
+        </tr>
+        {% empty %}
+        <tr><td colspan="4" class="empty-state"><p class="text-muted">Aucun remboursement enregistré.</p></td></tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+
+<!-- NPS trigger for disbursed credits -->
+{% if object.status == "DECAISSEE" and user.role == "CLIENT" %}
+<div data-nps-trigger="credit_{{ object.pk }}" data-nps-context="CREDIT" data-nps-context-id="{{ object.pk }}" style="display:none;"></div>
+{% endif %}
+{% endblock %}

@@ -1,0 +1,29 @@
+{% extends "base.html" %}
+{% block title %}Modifier le crédit #{{ object.pk }}{% endblock %}
+{% block content %}
+<div class="page-header">
+  <div><h1>Modifier le crédit #{{ object.pk }}</h1><div class="subtitle">{{ object.client.get_full_name|default:object.client.username }}</div></div>
+  <a href="{% url 'credit_detail' object.pk %}" class="btn btn-ghost">← Retour</a>
+</div>
+
+<div class="card" style="max-width:720px;">
+  <div class="card-header">
+    <span class="card-title">Formulaire de modification</span>
+  </div>
+  <form method="post">
+    {% csrf_token %}
+    {% for field in form %}
+      <div class="form-group">
+        <label class="form-label" for="{{ field.id_for_label }}">{{ field.label }}</label>
+        {{ field }}
+        {% if field.help_text %}<div class="form-help">{{ field.help_text }}</div>{% endif %}
+        {% if field.errors %}<div class="form-error">{{ field.errors|join:", " }}</div>{% endif %}
+      </div>
+    {% endfor %}
+    <div class="flex gap-8 mt-16">
+      <button type="submit" class="btn btn-primary">Enregistrer les modifications</button>
+      <a href="{% url 'credit_detail' object.pk %}" class="btn btn-ghost">Annuler</a>
+    </div>
+  </form>
+</div>
+{% endblock %}
